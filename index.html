@@ -7,43 +7,99 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#8a11cf">
   <title>Cobrinha com Game Over</title>
-  
+
   <style>
     body {
       background: rgb(138, 17, 207);
       font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+
     canvas {
       border: 5px solid black;
-      display: block;
-      margin: 20px auto;
+      background: #fff;
+      max-width: 100vw;
+      max-height: 100vw;
+      width: 100%;
+      height: auto;
+      touch-action: none;
     }
+
     #score, #game-over, #restart-btn {
       text-align: center;
-    }
-    #score {
-      font-size: 20px;
       margin-top: 10px;
     }
+
+    #score {
+      font-size: 20px;
+      color: white;
+    }
+
     #game-over {
       font-size: 24px;
       color: red;
       display: none;
     }
+
     #restart-btn {
       display: none;
-      margin: 10px auto;
+      margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
     }
+
+    #touch-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    #touch-controls .row {
+      display: flex;
+      justify-content: center;
+    }
+
+    #touch-controls button {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      margin: 5px;
+      border-radius: 10px;
+      border: none;
+      background: #eee;
+      box-shadow: 2px 2px 5px #333;
+      cursor: pointer;
+    }
+
+    #touch-controls button:active {
+      background: #ccc;
+    }
   </style>
 </head>
 <body>
+
   <canvas id="gameCanvas" width="400" height="400"></canvas>
   <div id="score">Pontos: 0</div>
   <div id="game-over">💀 Game Over!</div>
   <button id="restart-btn">🔄 Recomeçar</button>
+
+  <!-- Controles de toque -->
+  <div id="touch-controls">
+    <div class="row">
+      <button id="up">⬆️</button>
+    </div>
+    <div class="row">
+      <button id="left">⬅️</button>
+      <button id="down">⬇️</button>
+      <button id="right">➡️</button>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -79,7 +135,6 @@
         ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
         ctx.strokeStyle = 'black';
         ctx.strokeRect(segment.x, segment.y, gridSize, gridSize);
-
         if (index === 0) drawEyes(segment.x, segment.y);
       });
     }
@@ -106,13 +161,11 @@
       if (direction === 'UP') head.y -= gridSize;
       if (direction === 'DOWN') head.y += gridSize;
 
-      // Travessia da tela
       if (head.x >= canvasSize) head.x = 0;
       if (head.x < 0) head.x = canvasSize - gridSize;
       if (head.y >= canvasSize) head.y = 0;
       if (head.y < 0) head.y = canvasSize - gridSize;
 
-      // Colisão com o corpo
       if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
         gameOver();
         return;
@@ -154,7 +207,7 @@
     function gameOver() {
       gameRunning = false;
       gameOverText.style.display = 'block';
-      restartBtn.style.display = 'block';
+      restartBtn.style.display = 'inline-block';
     }
 
     function gameLoop() {
@@ -166,15 +219,27 @@
     }
 
     document.addEventListener('keydown', changeDirection);
-    restartBtn.addEventListener('click', () => {
-      startGame();
-    });
+    restartBtn.addEventListener('click', startGame);
     setInterval(gameLoop, 100);
 
-    // PWA Service Worker
+    // Toque - controles
+    document.getElementById('up').addEventListener('click', () => {
+      if (direction !== 'DOWN') direction = 'UP';
+    });
+    document.getElementById('down').addEventListener('click', () => {
+      if (direction !== 'UP') direction = 'DOWN';
+    });
+    document.getElementById('left').addEventListener('click', () => {
+      if (direction !== 'RIGHT') direction = 'LEFT';
+    });
+    document.getElementById('right').addEventListener('click', () => {
+      if (direction !== 'LEFT') direction = 'RIGHT';
+    });
+
+    // Service Worker para PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('worker.js')
-        .then(() => console.log('Service Worker registrado!'))
+        .then(() => console.log('Service Worker registrado'))
         .catch(err => console.error('Erro ao registrar Service Worker:', err));
     }
   </script>
