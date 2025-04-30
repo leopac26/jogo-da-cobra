@@ -28,15 +28,14 @@
       height: auto;
       touch-action: none;
     }
-    #pause-btn {
-  display: none;
-  margin: 10px auto;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-}
 
-    
+    #pause-btn {
+      display: none;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
     #score, #game-over, #restart-btn {
       text-align: center;
@@ -99,7 +98,6 @@
   <button id="restart-btn">🔄 Recomeçar</button>
   <button id="pause-btn">⏸️ Pausar</button>
 
-
   <!-- Controles de toque -->
   <div id="touch-controls">
     <div class="row">
@@ -119,13 +117,15 @@
     const scoreDisplay = document.getElementById('score');
     const restartBtn = document.getElementById('restart-btn');
     const pauseBtn = document.getElementById('pause-btn');
-let isPaused = false;
-
+    let isPaused = false;
 
     const gridSize = 20;
     const canvasSize = 400;
 
     let snake, direction, food, gameRunning, score;
+    let spaceImage = new Image();
+    spaceImage.src = 'space.jpg'; // Altere o caminho para o arquivo da sua imagem de fundo
+
     startGame();
 
     function startGame() {
@@ -142,9 +142,13 @@ let isPaused = false;
       gameOverText.style.display = 'none';
       restartBtn.style.display = 'none';
       pauseBtn.style.display = 'block';
-isPaused = false;
-pauseBtn.innerText = '⏸️ Pausar';
+      isPaused = false;
+      pauseBtn.innerText = '⏸️ Pausar';
+    }
 
+    function drawBackground() {
+      // Desenha o fundo de espaço
+      ctx.drawImage(spaceImage, 0, 0, canvas.width, canvas.height);
     }
 
     function drawSnake() {
@@ -231,6 +235,7 @@ pauseBtn.innerText = '⏸️ Pausar';
     function gameLoop() {
       if (!gameRunning || isPaused) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground(); // Desenha o fundo
       moveSnake();
       drawSnake();
       drawFood();
@@ -238,9 +243,9 @@ pauseBtn.innerText = '⏸️ Pausar';
 
     document.addEventListener('keydown', changeDirection);
     pauseBtn.addEventListener('click', () => {
-  isPaused = !isPaused;
-  pauseBtn.innerText = isPaused ? '▶️ Retomar' : '⏸️ Pausar';
-});
+      isPaused = !isPaused;
+      pauseBtn.innerText = isPaused ? '▶️ Retomar' : '⏸️ Pausar';
+    });
 
     restartBtn.addEventListener('click', startGame);
     setInterval(gameLoop, 100);
