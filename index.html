@@ -28,6 +28,15 @@
       height: auto;
       touch-action: none;
     }
+    #pause-btn {
+  display: none;
+  margin: 10px auto;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+    
 
     #score, #game-over, #restart-btn {
       text-align: center;
@@ -88,6 +97,8 @@
   <div id="score">Pontos: 0</div>
   <div id="game-over">💀 Game Over!</div>
   <button id="restart-btn">🔄 Recomeçar</button>
+  <button id="pause-btn">⏸️ Pausar</button>
+
 
   <!-- Controles de toque -->
   <div id="touch-controls">
@@ -107,6 +118,9 @@
     const gameOverText = document.getElementById('game-over');
     const scoreDisplay = document.getElementById('score');
     const restartBtn = document.getElementById('restart-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+let isPaused = false;
+
 
     const gridSize = 20;
     const canvasSize = 400;
@@ -127,6 +141,10 @@
       scoreDisplay.innerText = 'Pontos: 0';
       gameOverText.style.display = 'none';
       restartBtn.style.display = 'none';
+      pauseBtn.style.display = 'block';
+isPaused = false;
+pauseBtn.innerText = '⏸️ Pausar';
+
     }
 
     function drawSnake() {
@@ -211,7 +229,7 @@
     }
 
     function gameLoop() {
-      if (!gameRunning) return;
+      if (!gameRunning || isPaused) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       moveSnake();
       drawSnake();
@@ -219,6 +237,11 @@
     }
 
     document.addEventListener('keydown', changeDirection);
+    pauseBtn.addEventListener('click', () => {
+  isPaused = !isPaused;
+  pauseBtn.innerText = isPaused ? '▶️ Retomar' : '⏸️ Pausar';
+});
+
     restartBtn.addEventListener('click', startGame);
     setInterval(gameLoop, 100);
 
