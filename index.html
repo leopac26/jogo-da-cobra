@@ -9,11 +9,22 @@
   <title>Cobrinha com Game Over</title>
 
   <style>
-    body {
-      background: rgb(138, 17, 207);
-      font-family: sans-serif;
+    html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
+      background: rgb(138, 17, 207);
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    main {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -23,42 +34,28 @@
       border: 5px solid black;
       background: #fff;
       max-width: 100vw;
-      max-height: 100vw;
-      width: 100%;
-      height: auto;
+      width: 400px;
+      height: 400px;
       touch-action: none;
     }
 
-    #pause-btn {
-      display: none;
-      margin: 10px auto;
+    #pause-btn, #restart-btn {
+      margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
     }
 
-    #score, #game-over, #restart-btn {
-      text-align: center;
-      margin-top: 10px;
-    }
-
     #score {
       font-size: 20px;
       color: white;
+      margin-top: 10px;
     }
 
     #game-over {
       font-size: 24px;
       color: red;
       display: none;
-    }
-
-    #restart-btn {
-      display: none;
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
     }
 
     #touch-controls {
@@ -88,27 +85,89 @@
     #touch-controls button:active {
       background: #ccc;
     }
+
+    #ranking-container {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 10px;
+      color: white;
+      max-width: 180px;
+      font-size: 14px;
+      z-index: 9999;
+    }
+
+    #ranking-container h3 {
+      margin: 0 0 5px 0;
+      font-size: 16px;
+    }
+
+    #ranking-container ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    #ranking-container li {
+      line-height: 1.4;
+    }
+
+    #name-screen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 999;
+    }
+
+    #name-screen input {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    #name-screen button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
   </style>
 </head>
-<body>
 
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
-  <div id="score">Pontos: 0</div>
-  <div id="game-over">💀 Game Over!</div>
-  <button id="restart-btn">🔄 Recomeçar</button>
-  <button id="pause-btn">⏸️ Pausar</button>
 
-  <!-- Controles de toque -->
-  <div id="touch-controls">
-    <div class="row">
-      <button id="up">⬆️</button>
+  <body>
+    <div id="name-screen">
+      <h2 style="color:white;">Digite seu nome para jogar</h2>
+      <input type="text" id="player-name" placeholder="Seu nome" />
+      <button id="start-game-btn">🎮 Iniciar</button>
     </div>
-    <div class="row">
-      <button id="left">⬅️</button>
-      <button id="down">⬇️</button>
-      <button id="right">➡️</button>
+    
+    <main>
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+      <div id="score">Pontos: 0</div>
+      <div id="game-over">Game Over!</div>
+      <button id="restart-btn">🔄 Reiniciar</button>
+      <button id="pause-btn">⏸️ Pausar</button>
+    </main>
+    
+    <div id="ranking-container">
+      <h3>🏆 Top 10 Recordes</h3>
+      <ol id="ranking"></ol>
     </div>
-  </div>
+    
+    <div id="touch-controls">
+      <div class="row">
+        <button id="up">⬆️</button>
+      </div>
+      <div class="row">
+        <button id="left">⬅️</button>
+        <button id="down">⬇️</button>
+        <button id="right">➡️</button>
+      </div>
+    </div>
+    
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -117,17 +176,21 @@
     const scoreDisplay = document.getElementById('score');
     const restartBtn = document.getElementById('restart-btn');
     const pauseBtn = document.getElementById('pause-btn');
+    const nameScreen = document.getElementById('name-screen');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const rankingList = document.getElementById('ranking');
     let isPaused = false;
-
+  
     const gridSize = 20;
     const canvasSize = 400;
-
+  
     let snake, direction, food, gameRunning, score;
+    let playerName = '';
+    const maxRanking = 10;
+  
     let spaceImage = new Image();
-    spaceImage.src = 'space.jpg'; // Altere o caminho para o arquivo da sua imagem de fundo
-
-    startGame();
-
+    spaceImage.src = 'space.jpg';
+  
     function startGame() {
       snake = [
         { x: 60, y: 60 },
@@ -145,12 +208,11 @@
       isPaused = false;
       pauseBtn.innerText = '⏸️ Pausar';
     }
-
+  
     function drawBackground() {
-      // Desenha o fundo de espaço
       ctx.drawImage(spaceImage, 0, 0, canvas.width, canvas.height);
     }
-
+  
     function drawSnake() {
       snake.forEach((segment, index) => {
         ctx.fillStyle = index === 0 ? 'darkgreen' : 'limegreen';
@@ -160,41 +222,41 @@
         if (index === 0) drawEyes(segment.x, segment.y);
       });
     }
-
+  
     function drawEyes(x, y) {
       ctx.fillStyle = 'white';
       ctx.beginPath();
       ctx.arc(x + 5, y + 5, 3, 0, Math.PI * 2);
       ctx.arc(x + 15, y + 5, 3, 0, Math.PI * 2);
       ctx.fill();
-
+  
       ctx.fillStyle = 'black';
       ctx.beginPath();
       ctx.arc(x + 5, y + 5, 1.5, 0, Math.PI * 2);
       ctx.arc(x + 15, y + 5, 1.5, 0, Math.PI * 2);
       ctx.fill();
     }
-
+  
     function moveSnake() {
       const head = { ...snake[0] };
-
+  
       if (direction === 'RIGHT') head.x += gridSize;
       if (direction === 'LEFT') head.x -= gridSize;
       if (direction === 'UP') head.y -= gridSize;
       if (direction === 'DOWN') head.y += gridSize;
-
+  
       if (head.x >= canvasSize) head.x = 0;
       if (head.x < 0) head.x = canvasSize - gridSize;
       if (head.y >= canvasSize) head.y = 0;
       if (head.y < 0) head.y = canvasSize - gridSize;
-
+  
       if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
         gameOver();
         return;
       }
-
+  
       snake.unshift(head);
-
+  
       if (head.x === food.x && head.y === food.y) {
         score++;
         scoreDisplay.innerText = `Pontos: ${score}`;
@@ -203,12 +265,12 @@
         snake.pop();
       }
     }
-
+  
     function drawFood() {
       ctx.fillStyle = 'red';
       ctx.fillRect(food.x, food.y, gridSize, gridSize);
     }
-
+  
     function generateFood() {
       let newFood;
       do {
@@ -218,39 +280,66 @@
       } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
       return newFood;
     }
-
+  
     function changeDirection(event) {
       if (event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
       if (event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
       if (event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
       if (event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
     }
-
+  
     function gameOver() {
       gameRunning = false;
       gameOverText.style.display = 'block';
       restartBtn.style.display = 'inline-block';
+      checkAndSaveScore();
     }
-
+  
     function gameLoop() {
       if (!gameRunning || isPaused) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBackground(); // Desenha o fundo
+      drawBackground();
       moveSnake();
       drawSnake();
       drawFood();
     }
-
+  
+    function getRanking() {
+      return JSON.parse(localStorage.getItem('snakeRanking')) || [];
+    }
+  
+    function saveRanking(ranking) {
+      localStorage.setItem('snakeRanking', JSON.stringify(ranking));
+    }
+  
+    function updateRankingDisplay() {
+      const ranking = getRanking();
+      rankingList.innerHTML = '';
+      ranking.forEach((entry, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}. ${entry.name} - ${entry.score} pts`;
+        rankingList.appendChild(li);
+      });
+    }
+  
+    function checkAndSaveScore() {
+      const ranking = getRanking();
+      ranking.push({ name: playerName, score });
+      ranking.sort((a, b) => b.score - a.score);
+      if (ranking.length > maxRanking) ranking.length = maxRanking;
+      saveRanking(ranking);
+      updateRankingDisplay();
+    }
+  
     document.addEventListener('keydown', changeDirection);
+  
     pauseBtn.addEventListener('click', () => {
       isPaused = !isPaused;
       pauseBtn.innerText = isPaused ? '▶️ Retomar' : '⏸️ Pausar';
     });
-
+  
     restartBtn.addEventListener('click', startGame);
-    setInterval(gameLoop, 100);
-
-    // Toque - controles
+  
     document.getElementById('up').addEventListener('click', () => {
       if (direction !== 'DOWN') direction = 'UP';
     });
@@ -263,13 +352,31 @@
     document.getElementById('right').addEventListener('click', () => {
       if (direction !== 'LEFT') direction = 'RIGHT';
     });
-
-    // Service Worker para PWA
+  
+    startGameBtn.addEventListener('click', () => {
+      const nameInput = document.getElementById('player-name');
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert('Digite seu nome para jogar!');
+        return;
+      }
+      playerName = name;
+      nameScreen.style.display = 'none';
+      canvas.style.display = 'block';
+      updateRankingDisplay();
+      startGame();
+    });
+  
+    updateRankingDisplay();
+  
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('worker.js')
         .then(() => console.log('Service Worker registrado'))
         .catch(err => console.error('Erro ao registrar Service Worker:', err));
     }
+  
+    setInterval(gameLoop, 100);
   </script>
+  
 </body>
 </html>
