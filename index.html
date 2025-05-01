@@ -35,6 +35,7 @@
       width: 400px;
       height: 400px;
       touch-action: none;
+      
     }
 
     #restart-btn {
@@ -404,6 +405,12 @@
     });
 
     setInterval(gameLoop, 100);
+
+    // Impede que o swipe para baixo atualize a página (em navegadores móveis)
+window.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
   </script>
 </body>
 </html>
