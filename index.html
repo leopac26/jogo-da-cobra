@@ -86,33 +86,6 @@
       background: #ccc;
     }
 
-    #ranking-container {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 10px;
-      border-radius: 10px;
-      color: white;
-      max-width: 180px;
-      font-size: 14px;
-      z-index: 9999;
-    }
-
-    #ranking-container h3 {
-      margin: 0 0 5px 0;
-      font-size: 16px;
-    }
-
-    #ranking-container ol {
-      margin: 0;
-      padding-left: 20px;
-    }
-
-    #ranking-container li {
-      line-height: 1.4;
-    }
-
     #name-screen {
       position: absolute;
       top: 50%;
@@ -133,41 +106,63 @@
       padding: 10px 20px;
       font-size: 16px;
     }
+
+    #final-screen {
+      display: none;
+      text-align: center;
+      color: white;
+      padding: 20px;
+    }
+
+    #final-ranking {
+      text-align: left;
+      margin: 0 auto;
+      display: inline-block;
+    }
+
+    #play-again-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 
+<body>
+  <div id="name-screen">
+    <h2 style="color:white;">Digite seu nome para jogar</h2>
+    <input type="text" id="player-name" placeholder="Seu nome" />
+    <button id="start-game-btn">🎮 Iniciar</button>
+  </div>
 
-  <body>
-    <div id="name-screen">
-      <h2 style="color:white;">Digite seu nome para jogar</h2>
-      <input type="text" id="player-name" placeholder="Seu nome" />
-      <button id="start-game-btn">🎮 Iniciar</button>
+  <main>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="score">Pontos: 0</div>
+    <div id="game-over">Game Over!</div>
+    <button id="restart-btn">🔄 Reiniciar</button>
+    <button id="pause-btn">⏸️ Pausar</button>
+  </main>
+
+  <div id="touch-controls">
+    <div class="row">
+      <button id="up">⬆️</button>
     </div>
-    
-    <main>
-      <canvas id="gameCanvas" width="400" height="400"></canvas>
-      <div id="score">Pontos: 0</div>
-      <div id="game-over">Game Over!</div>
-      <button id="restart-btn">🔄 Reiniciar</button>
-      <button id="pause-btn">⏸️ Pausar</button>
-    </main>
-    
-    <div id="ranking-container">
-      <h3>🏆 Top 10 Recordes</h3>
-      <ol id="ranking"></ol>
+    <div class="row">
+      <button id="left">⬅️</button>
+      <button id="down">⬇️</button>
+      <button id="right">➡️</button>
     </div>
-    
-    <div id="touch-controls">
-      <div class="row">
-        <button id="up">⬆️</button>
-      </div>
-      <div class="row">
-        <button id="left">⬅️</button>
-        <button id="down">⬇️</button>
-        <button id="right">➡️</button>
-      </div>
-    </div>
-    
+  </div>
+
+  <!-- 🔥 Tela final com recorde -->
+  <div id="final-screen">
+    <h2>🎉 Fim de Jogo!</h2>
+    <p id="final-score"></p>
+    <h3>🏆 Ranking</h3>
+    <ol id="final-ranking"></ol>
+    <button id="play-again-btn">▶️ Jogar Novamente</button>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -178,9 +173,11 @@
     const pauseBtn = document.getElementById('pause-btn');
     const nameScreen = document.getElementById('name-screen');
     const startGameBtn = document.getElementById('start-game-btn');
-    const rankingList = document.getElementById('ranking');
-    let isPaused = false;
+    const finalScreen = document.getElementById('final-screen');
+    const finalScore = document.getElementById('final-score');
+    const playAgainBtn = document.getElementById('play-again-btn');
   
+    let isPaused = false;
     const gridSize = 20;
     const canvasSize = 400;
   
@@ -291,7 +288,11 @@
     function gameOver() {
       gameRunning = false;
       gameOverText.style.display = 'block';
-      restartBtn.style.display = 'inline-block';
+      restartBtn.style.display = 'none';
+      pauseBtn.style.display = 'none';
+      document.querySelector('main').style.display = 'none';
+      finalScore.innerText = `Você fez ${score} pontos!`;
+      finalScreen.style.display = 'block';
       checkAndSaveScore();
     }
   
@@ -314,6 +315,7 @@
   
     function updateRankingDisplay() {
       const ranking = getRanking();
+      const rankingList = document.getElementById('final-ranking');
       rankingList.innerHTML = '';
       ranking.forEach((entry, index) => {
         const li = document.createElement('li');
@@ -326,7 +328,7 @@
       const ranking = getRanking();
       ranking.push({ name: playerName, score });
       ranking.sort((a, b) => b.score - a.score);
-      if (ranking.length > maxRanking) ranking.length = maxRanking;
+      if (ranking.length > 10) ranking.length = 10;
       saveRanking(ranking);
       updateRankingDisplay();
     }
@@ -363,11 +365,16 @@
       playerName = name;
       nameScreen.style.display = 'none';
       canvas.style.display = 'block';
-      updateRankingDisplay();
+      document.querySelector('main').style.display = 'flex';
+      finalScreen.style.display = 'none';
       startGame();
     });
   
-    updateRankingDisplay();
+    playAgainBtn.addEventListener('click', () => {
+      finalScreen.style.display = 'none';
+      document.querySelector('main').style.display = 'flex';
+      startGame();
+    });
   
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('worker.js')
@@ -377,6 +384,5 @@
   
     setInterval(gameLoop, 100);
   </script>
-  
 </body>
 </html>
