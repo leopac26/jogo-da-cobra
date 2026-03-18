@@ -180,6 +180,16 @@
     const finalScore = document.getElementById('final-score');
     const playAgainBtn = document.getElementById('play-again-btn');
 
+let gameInterval;
+let gameSpeed = 100; // Velocidade base
+// Adicione esta variável
+let baseSpeed = 100;
+let currentSpeed = 100;
+let specialFood = null;
+let specialFoodTimer = null;
+let foodType = 'normal'; // 'normal', 'special', 'golden'
+
+
     let isPaused = false;
     const gridSize = 20;
     const canvasSize = 400;
@@ -191,21 +201,28 @@
     let spaceImage = new Image();
     spaceImage.src = 'space.jpg';
 
-    function startGame() {
-      snake = [
-        { x: 60, y: 60 },
-        { x: 40, y: 60 },
-        { x: 20, y: 60 }
-      ];
-      direction = 'RIGHT';
-      food = generateFood();
-      gameRunning = true;
-      score = 0;
-      scoreDisplay.innerText = 'Pontos: 0';
-      gameOverText.style.display = 'none';
-      restartBtn.style.display = 'none';
-      isPaused = false;
-    }
+    // Modifique a função startGame
+function startGame() {
+  snake = [
+    { x: 60, y: 60 },
+    { x: 40, y: 60 },
+    { x: 20, y: 60 }
+  ];
+  direction = 'RIGHT';
+  food = generateFood();
+  gameRunning = true;
+  score = 0;
+  scoreDisplay.innerText = 'Pontos: 0';
+  gameOverText.style.display = 'none';
+  restartBtn.style.display = 'none';
+  isPaused = false;
+
+  // Limpar intervalo anterior se existir
+  if (gameInterval) clearInterval(gameInterval);
+  gameInterval = setInterval(gameLoop, gameSpeed);
+}
+
+
 
     function drawBackground() {
       ctx.drawImage(spaceImage, 0, 0, canvas.width, canvas.height);
@@ -235,13 +252,14 @@
       ctx.fill();
     }
 
-    function moveSnake() {
-      const head = { ...snake[0] };
+    // Modifique a função moveSnake
+function moveSnake() {
+  const head = { ...snake[0] };
 
-      if (direction === 'RIGHT') head.x += gridSize;
-      if (direction === 'LEFT') head.x -= gridSize;
-      if (direction === 'UP') head.y -= gridSize;
-      if (direction === 'DOWN') head.y += gridSize;
+  if (direction === 'RIGHT') head.x += gridSize;
+  if (direction === 'LEFT') head.x -= gridSize;
+  if (direction === 'UP') head.y -= gridSize;
+  if (direction === 'DOWN') head.y += gridSize;
 
       if (head.x >= canvasSize) head.x = 0;
       if (head.x < 0) head.x = canvasSize - gridSize;
@@ -249,25 +267,47 @@
       if (head.y < 0) head.y = canvasSize - gridSize;
 
       if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
-        gameOver();
-        return;
-      }
+    gameOver();
+    return;
+  }
 
-      snake.unshift(head);
+  snake.unshift(head);
 
-      if (head.x === food.x && head.y === food.y) {
-        score++;
-        scoreDisplay.innerText = `Pontos: ${score}`;
-        food = generateFood();
-      } else {
-        snake.pop();
-      }
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    scoreDisplay.innerText = `Pontos: ${score}`;
+    food = generateFood();
+    
+    // Aumenta velocidade a cada 5 pontos
+    if (score % 5 === 0 && currentSpeed > 50) {
+      currentSpeed = Math.max(50, baseSpeed - Math.floor(score / 2));
+      clearInterval(gameInterval);
+      gameInterval = setInterval(gameLoop, currentSpeed);
     }
+  } else {
+    snake.pop();
+  }
+}
 
-    function drawFood() {
-      ctx.fillStyle = 'red';
-      ctx.fillRect(food.x, food.y, gridSize, gridSize);
-    }
+   function drawFood() {
+  if (foodType === 'special') {
+    // Comida especial (azul) - vale 3 pontos
+    ctx.fillStyle = 'blue';
+    ctx.shadowColor = 'cyan';
+    ctx.shadowBlur = 10;
+  } else if (foodType === 'golden') {
+    // Comida dourada - vale 5 pontos e aparece por tempo limitado
+    ctx.fillStyle = 'gold';
+    ctx.shadowColor = 'yellow';
+    ctx.shadowBlur = 15;
+  } else {
+    ctx.fillStyle = 'red';
+    ctx.shadowBlur = 0;
+  }
+  
+  ctx.fillRect(food.x, food.y, gridSize, gridSize);
+  ctx.shadowBlur = 0; // Reset
+}
 
     function generateFood() {
       let newFood;
@@ -286,15 +326,17 @@
       if (event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
     }
 
-    function gameOver() {
-      gameRunning = false;
-      gameOverText.style.display = 'block';
-      restartBtn.style.display = 'none';
-      document.querySelector('main').style.display = 'none';
-      finalScore.innerText = `Você fez ${score} pontos!`;
-      finalScreen.style.display = 'block';
-      checkAndSaveScore();
-    }
+    // Modifique a função gameOver
+function gameOver() {
+  gameRunning = false;
+  if (gameInterval) clearInterval(gameInterval);
+  gameOverText.style.display = 'block';
+  restartBtn.style.display = 'none';
+  document.querySelector('main').style.display = 'none';
+  finalScore.innerText = `Você fez ${score} pontos!`;
+  finalScreen.style.display = 'block';
+  checkAndSaveScore();
+}
 
     function gameLoop() {
       if (!gameRunning || isPaused) return;
